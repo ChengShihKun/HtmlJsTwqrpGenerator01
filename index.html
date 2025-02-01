@@ -67,11 +67,16 @@
 	const url = 'tw_bank_code.txt';
 
 	fetch(url)
-	  .then(response => response.text())
-	  .then(data => {
-		console.log(data);  // 顯示 txt 文件的內容
-		bankData=data;
-	  })
+	  .then(response => {
+        if (!response.ok) {
+          throw new Error('網頁請求失敗');
+        }
+        return response.arrayBuffer();  // 以 ArrayBuffer 取得原始二進位數據
+      })
+      .then(buffer => {
+        const decoder = new TextDecoder('utf-8');  // 使用 UTF-8 編碼解碼
+        bankData = decoder.decode(buffer);  // 解碼成字串        
+      })
 	  .catch(error => {
 		console.error('無法讀取文件:', error);
 	  });	
