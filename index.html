@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TWQR轉帳QrCode產生器</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.js"></script>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+   
+    let qrCode;
+
+    window.onload = function () {
+		/*
+      // 預設值設定
+      document.getElementById('amount').value = '2077';
+      document.getElementById('bankCode').value = '812';
+      document.getElementById('accountNumber').value = '01414720027001';
+      document.getElementById('remark').value = '沒有備註';
+      document.getElementById('itemName').value = '欠款';
+      document.getElementById('receiver').value = '債主';
+	  */
+	  
+	  // 監聽"備註"輸入事件
+		const remarkInput = document.getElementById('remark');
+		const charCountDisplay = document.getElementById('charCount');
+
+		remarkInput.addEventListener('input', function() {
+		  const currentLength = remarkInput.value.length;
+		  charCountDisplay.textContent = `${currentLength} 字`;
+		});
+
+      // 初始化 QR Code 元素
+      qrCode = new QRCode(document.getElementById("qrcode"), {
+        width: 256,
+        height: 256,
+        colorDark: "#000000",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+
+      // 監聽輸入事件自動刷新字串與 QR Code
+      const inputs = document.querySelectorAll('input');
+      inputs.forEach(input => input.addEventListener('input', generateString));
+
+      generateString(); // 初始化生成字串
+
+      // 點擊結果自動複製功能
+      document.getElementById('output').addEventListener('click', copyToClipboard);
+
+      // 加載銀行資料
+      loadBankData();
+    };
+	
+
+
+
+    let bankData = `
+      600     農金資訊股份有限公司　　　　　　　　　　農金資訊　
+      952     財團法人農漁會南區資訊中心　　　　　　　南農中心　
+      997     中華民國信用合作社聯合社南區聯合資訊處理南資中心　
+      000     中央銀行國庫局　　　　　　　　　　　　　央行國庫局
+      0000022 國庫局　　　　　　　　　　　　　　　　　央行國庫局
+      004     臺灣銀行　　　　　　　　　　　　　　　　臺銀　　　
+    `;
+	
+	const url = 'tw_bank_code.txt';
+
+	fetch(url)
+	  .then(response => response.text())
+	  .then(data => {
+		console.log(data);  // 顯示 txt 文件的內容
+		bankData=data;
+	  })
+	  .catch(error => {
+		console.error('無法讀取文件:', error);
+	  });	
+
+    // 使用正規表達式解析銀行資料
+    const regex = /(?<BankCode>[0-9]{3,7})[\s]{5}(?<BankName>.{20})/gm;
+    const bankList = [];
+
+    let match;
+    while ((match = regex.exec(bankData)) !== null) {
+      const bankCode = match.groups.BankCode.trim();
+      const bankName = match.groups.BankName.trim();
+      bankList.push({ code: bankCode, name: bankName });
+    }
+
+    // 加載銀行資料並填充到 datalist 中
+    function loadBankData() {
+      const datalist = document.getElementById("bankList");
+      bankList.forEach(bank => {
+        const option = document.createElement("option");
+        option.value = `${bank.code}→${bank.name}`;
+        datalist.appendChild(option);
+      });
+    }
+
+    // 搜尋功能
+    $("#bankCode").on("input", function () {
+      const query = $(this).val().toLowerCase();
+      const filteredBanks = bankList.filter(bank => {
+        return bank.code.toLowerCase().includes(query) || bank.name.toLowerCase().includes(query);
+      });
+      // 更新 datalist 顯示過濾結果
+      const datalist = document.getElementById("bankList");
+      datalist.innerHTML = ""; // 清空舊選項
+      filteredBanks.forEach(bank => {
+        const option = document.createElement("option");
+        option.value = `${bank.code} ${bank.name}`;
+        datalist.appendChild(option);
+      });
+    });
+
+    function generateString() {
+      // 獲取輸入值
+      const amount = document.getElementById('amount').value.trim();
+      const original_bankCode = document.getElementById('bankCode').value.trim();
+      let accountNumber = document.getElementById('accountNumber').value.trim();
+      let remark = document.getElementById('remark').value.trim();
+      const itemName = document.getElementById('itemName').value.trim();
+      const receiver = document.getElementById('receiver').value.trim();
+	  let bankCode=original_bankCode;
+	  let bankName='KunBank';
+	  
+	  remark=(remark.length > 19 ? remark.substring(0, 19) : remark);
+	  
+		const regex = /(?<BankCode>[0-9]{3})→{0,1}(?<BankName>.*)/gm;
+
+		// Alternative syntax using RegExp constructor
+		// const regex = new RegExp('(?<BankCode>[0-9]{3})→{0,1}(?<BankName>.*)', 'gm')
+
+
+		// Reset `lastIndex` if this regex is defined globally
+		// regex.lastIndex = 0;
+
+		let m;
+
+		while ((m = regex.exec(original_bankCode)) !== null) {
+			// This is necessary to avoid infinite loops with zero-width matches
+			if (m.index === regex.lastIndex) {
+				regex.lastIndex++;
+			}
+			
+			// The result can be accessed through the `m`-variable.
+			m.forEach((match, groupIndex) => {
+				console.log(`Found match, group ${groupIndex}: ${match}`);
+				switch(groupIndex){
+					case 1:{
+						bankCode=match;						
+						break;
+					}
+					case 2:{						
+						bankName=match;
+						break;
+					}					
+				}
+			});
+		}
+		console.log(`bankCode=${bankCode}`);
+		console.log(`bankName=${bankName}`);
+
+
+      // 檢查輸入完整性與正規表達式驗證
+      if (!/^[1-9]\d{0,6}$/.test(amount) || !/^\d{3}$/.test(bankCode) || !/^\d{1,16}$/.test(accountNumber)) {
+        document.getElementById('output').textContent = "請檢查所有欄位是否正確填寫。";
+        qrCode.clear();
+        return;
+      }
+
+      // 補滿16碼前置零
+      accountNumber = accountNumber.padStart(16, '0');
+	  
+	  
+	  //套用預設銀行
+	  bankName=(bankName.trim().length > 0?bankName:'Kun銀行')
+
+      // 生成結果字串
+      const resultString = (`TWQRP://${bankName}/158/02/V1?`)
+	  +(amount.trim().length > 0?`D1=${amount}00`:'')
+	  +(`&D5=${bankCode}`)
+	  +(`&D6=${accountNumber}`)
+	  +(remark.trim().length > 0?`&D9=${(remark)}`:'')
+	  +(itemName.trim().length > 0?`&OT2=${(itemName)}`:'')
+	  +(receiver.trim().length > 0?`&OT7=${(receiver)}`:'');
+
+      // 顯示結果與生成 QR Code
+      document.getElementById('output').textContent = encodeURIComponent(resultString);
+      qrCode.makeCode(resultString);
+    }
+
+    function copyToClipboard() {
+      const outputText = document.getElementById('output').textContent;
+      if (outputText && outputText !== "請檢查所有欄位是否正確填寫。") {
+        navigator.clipboard.writeText(outputText).then(() => {
+          alert("字串已複製到剪貼簿！");
+        }).catch(err => {
+          alert("複製失敗，請手動複製。");
+        });
+      }
+    }
+  </script>
+</head>
+<body>
+  <h1>轉帳QrCode產生器</h1>
+  <form onsubmit="event.preventDefault();">
+    <label for="amount">收款金額:</label>
+    <input type="text" id="amount"><br>
+
+    <label for="bankCode">銀行代碼 (3位數字):</label>
+    <input type="text" id="bankCode" list="bankList" required><br>
+    <datalist id="bankList"></datalist>
+
+    <label for="accountNumber">收款帳號:</label>
+    <input type="text" id="accountNumber" required><br>
+
+    <label for="remark">轉帳備註 (最多19個字):</label>
+	<br>
+    <input type="text" id="remark">
+	<span id="charCount">0 字</span><br>
+	
+
+    <label for="itemName">款項名稱:</label>
+    <input type="text" id="itemName"><br>
+
+    <label for="receiver">收款者:</label>
+    <input type="text" id="receiver"><br>
+  </form>
+  
+  <h2>QR Code:</h2>  
+  <div id="qrcode" style="margin:15px 15px 15px 30px;"></div>
+
+  <h2>生成結果:</h2>
+	<p id="output" style="white-space: pre-wrap; word-wrap: break-word; cursor: pointer; color: blue;">
+	  點擊此處複製字串。這是一個長長的字串，當螢幕變窄時會自動換行。
+	</p>
+	
+	<br/>
+	<br/>
+	<br/>
+	<br/>
+	<br/>
+	
+
+
+  
+</body>
+</html>
