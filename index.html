@@ -71,23 +71,19 @@
       .then(buffer => {
         const decoder = new TextDecoder('big5');  // 使用 UTF-8 編碼解碼
         bankData = decoder.decode(buffer);  // 解碼成字串        
-	//console.log('成功讀取文件:', '\n\n'+bankData);
+		//console.log('成功讀取文件:', '\n\n'+bankData);
+		
+		//成功讀取的話 需要再執行一次
+		  loadBankData();
       })
 	  .catch(error => {
 		console.error('無法讀取文件:', error);
 	  });	
 
-    // 使用正規表達式解析銀行資料
-    const regex = /(?<BankCode>[0-9]{3,7})[\s]{5}(?<BankName>.{20})/gm;
-    
-
-    
-    while ((match = regex.exec(bankData)) !== null) {
-      const bankCode = match.groups.BankCode.trim();
-      const bankName = match.groups.BankName.trim();
-      bankList.push({ code: bankCode, name: bankName });
-    }
-      loadBankData();
+    	
+		  loadBankData();
+	  
+	  
     };
 	
 
@@ -99,6 +95,17 @@
 
     // 加載銀行資料並填充到 datalist 中
     function loadBankData() {
+	
+	// 使用正規表達式解析銀行資料
+    const regex = /(?<BankCode>[0-9]{3,7})[\s]{5}(?<BankName>.{20})/gm;
+	while ((match = regex.exec(bankData)) !== null) {
+		  const bankCode = match.groups.BankCode.trim();
+		  const bankName = match.groups.BankName.trim();
+		  bankList.push({ code: bankCode, name: bankName });
+		}
+	
+	
+	
       const datalist = document.getElementById("bankList");
       bankList.forEach(bank => {
         const option = document.createElement("option");
