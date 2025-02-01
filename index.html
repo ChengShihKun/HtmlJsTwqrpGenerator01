@@ -74,9 +74,9 @@
         return response.arrayBuffer();  // 以 ArrayBuffer 取得原始二進位數據
       })
       .then(buffer => {
-        const decoder = new TextDecoder('utf-8');  // 使用 UTF-8 編碼解碼
+        const decoder = new TextDecoder('big5');  // 使用 UTF-8 編碼解碼
         bankData = decoder.decode(buffer);  // 解碼成字串        
-	console.error('成功讀取文件:\n\n', bankData);
+	console.log('成功讀取文件:', '\n\n'+bankData);
       })
 	  .catch(error => {
 		console.error('無法讀取文件:', error);
