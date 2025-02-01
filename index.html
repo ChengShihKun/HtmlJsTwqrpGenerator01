@@ -9,6 +9,16 @@
   <script>
    
     let qrCode;
+	let bankData = `
+      600     農金資訊股份有限公司　　　　　　　　　　農金資訊　
+      952     財團法人農漁會南區資訊中心　　　　　　　南農中心　
+      997     中華民國信用合作社聯合社南區聯合資訊處理南資中心　
+      000     中央銀行國庫局　　　　　　　　　　　　　央行國庫局
+      0000022 國庫局　　　　　　　　　　　　　　　　　央行國庫局
+      004     臺灣銀行　　　　　　　　　　　　　　　　臺銀　　　
+    `;
+	const bankList = [];
+	let match;
 
     window.onload = function () {
 		/*
@@ -49,24 +59,9 @@
       document.getElementById('output').addEventListener('click', copyToClipboard);
 
       // 加載銀行資料
-      loadBankData();
-    };
-	
+	  const url = 'tw_bank_code.txt';
 
-
-
-    let bankData = `
-      600     農金資訊股份有限公司　　　　　　　　　　農金資訊　
-      952     財團法人農漁會南區資訊中心　　　　　　　南農中心　
-      997     中華民國信用合作社聯合社南區聯合資訊處理南資中心　
-      000     中央銀行國庫局　　　　　　　　　　　　　央行國庫局
-      0000022 國庫局　　　　　　　　　　　　　　　　　央行國庫局
-      004     臺灣銀行　　　　　　　　　　　　　　　　臺銀　　　
-    `;
-	
-	const url = 'tw_bank_code.txt';
-
-	fetch(url)
+		fetch(url)
 	  .then(response => {
         if (!response.ok) {
           throw new Error('網頁請求失敗');
@@ -84,14 +79,23 @@
 
     // 使用正規表達式解析銀行資料
     const regex = /(?<BankCode>[0-9]{3,7})[\s]{5}(?<BankName>.{20})/gm;
-    const bankList = [];
+    
 
-    let match;
+    
     while ((match = regex.exec(bankData)) !== null) {
       const bankCode = match.groups.BankCode.trim();
       const bankName = match.groups.BankName.trim();
       bankList.push({ code: bankCode, name: bankName });
     }
+      loadBankData();
+    };
+	
+
+
+
+    
+	
+	
 
     // 加載銀行資料並填充到 datalist 中
     function loadBankData() {
