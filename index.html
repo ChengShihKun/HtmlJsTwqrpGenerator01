@@ -76,7 +76,7 @@
       .then(buffer => {
         const decoder = new TextDecoder('big5');  // 使用 UTF-8 編碼解碼
         bankData = decoder.decode(buffer);  // 解碼成字串        
-	console.log('成功讀取文件:', '\n\n'+bankData);
+	//console.log('成功讀取文件:', '\n\n'+bankData);
       })
 	  .catch(error => {
 		console.error('無法讀取文件:', error);
@@ -98,7 +98,9 @@
       const datalist = document.getElementById("bankList");
       bankList.forEach(bank => {
         const option = document.createElement("option");
-        option.value = `${bank.code}→${bank.name}`;
+	const tmpOption = `${bank.code}→${bank.name}`;
+	console.log('push:', tmpOption);
+        option.value = tmpOption;
         datalist.appendChild(option);
       });
     }
